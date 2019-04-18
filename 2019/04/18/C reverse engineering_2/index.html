@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="zh-Changs">
+    <!-- title -->
+
+
+
+
+<!-- keywords -->
+
+
+
+
+<head><meta name="generator" content="Hexo 3.8.0">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="author" content="Beansjian">
+    <meta name="renderer" content="webkit">
+    <meta name="copyright" content="Beansjian">
+    
+    <meta name="keywords" content="hexo,hexo-theme,hexo-blog">
+    
+    <meta name="description" content="探索未知，保持初心">
+    <meta http-equiv="Cache-control" content="no-cache">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>C/C++ 反汇编与逆向分析 · Beansjian&#39;s Develop Blog</title>
+    <style type="text/css">
+    @font-face {
+        font-family: 'Oswald-Regular';
+        src: url("/font/Oswald-Regular.ttf");
+    }
+
+    body {
+        margin: 0;
+    }
+
+    header,
+    footer,
+    .back-top,
+    .sidebar,
+    .container,
+    .site-intro-meta,
+    .toc-wrapper {
+        display: none;
+    }
+
+    .site-intro {
+        position: relative;
+        z-index: 3;
+        width: 100%;
+        /* height: 50vh; */
+        overflow: hidden;
+    }
+
+    .site-intro-placeholder {
+        position: absolute;
+        z-index: -2;
+        top: 0;
+        left: 0;
+        width: calc(100% + 300px);
+        height: 100%;
+        background: repeating-linear-gradient(-45deg, #444 0, #444 80px, #333 80px, #333 160px);
+        background-position: center center;
+        transform: translate3d(-226px, 0, 0);
+        animation: gradient-move 2.5s ease-out 0s infinite;
+    }
+
+    @keyframes gradient-move {
+        0% {
+            transform: translate3d(-226px, 0, 0);
+        }
+        100% {
+            transform: translate3d(0, 0, 0);
+        }
+    }
+
+</style>
+
+    <link rel="preload" href="/css/style.css?v=20180824" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <link rel="stylesheet" href="/css/mobile.css?v=20180824" media="(max-width: 980px)">
+    
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    
+    <!-- /*! loadCSS. [c]2017 Filament Group, Inc. MIT License */
+/* This file is meant as a standalone workflow for
+- testing support for link[rel=preload]
+- enabling async CSS loading in browsers that do not support rel=preload
+- applying rel preload css once loaded, whether supported or not.
+*/ -->
+<script>
+(function( w ){
+	"use strict";
+	// rel=preload support test
+	if( !w.loadCSS ){
+		w.loadCSS = function(){};
+	}
+	// define on the loadCSS obj
+	var rp = loadCSS.relpreload = {};
+	// rel=preload feature support test
+	// runs once and returns a function for compat purposes
+	rp.support = (function(){
+		var ret;
+		try {
+			ret = w.document.createElement( "link" ).relList.supports( "preload" );
+		} catch (e) {
+			ret = false;
+		}
+		return function(){
+			return ret;
+		};
+	})();
+
+	// if preload isn't supported, get an asynchronous load by using a non-matching media attribute
+	// then change that media back to its intended value on load
+	rp.bindMediaToggle = function( link ){
+		// remember existing media attr for ultimate state, or default to 'all'
+		var finalMedia = link.media || "all";
+
+		function enableStylesheet(){
+			link.media = finalMedia;
+		}
+
+		// bind load handlers to enable media
+		if( link.addEventListener ){
+			link.addEventListener( "load", enableStylesheet );
+		} else if( link.attachEvent ){
+			link.attachEvent( "onload", enableStylesheet );
+		}
+
+		// Set rel and non-applicable media type to start an async request
+		// note: timeout allows this to happen async to let rendering continue in IE
+		setTimeout(function(){
+			link.rel = "stylesheet";
+			link.media = "only x";
+		});
+		// also enable media after 3 seconds,
+		// which will catch very old browsers (android 2.x, old firefox) that don't support onload on link
+		setTimeout( enableStylesheet, 3000 );
+	};
+
+	// loop through link elements in DOM
+	rp.poly = function(){
+		// double check this to prevent external calls from running
+		if( rp.support() ){
+			return;
+		}
+		var links = w.document.getElementsByTagName( "link" );
+		for( var i = 0; i < links.length; i++ ){
+			var link = links[ i ];
+			// qualify links to those with rel=preload and as=style attrs
+			if( link.rel === "preload" && link.getAttribute( "as" ) === "style" && !link.getAttribute( "data-loadcss" ) ){
+				// prevent rerunning on link
+				link.setAttribute( "data-loadcss", true );
+				// bind listeners to toggle media back
+				rp.bindMediaToggle( link );
+			}
+		}
+	};
+
+	// if unsupported, run the polyfill
+	if( !rp.support() ){
+		// run once at least
+		rp.poly();
+
+		// rerun poly on an interval until onload
+		var run = w.setInterval( rp.poly, 500 );
+		if( w.addEventListener ){
+			w.addEventListener( "load", function(){
+				rp.poly();
+				w.clearInterval( run );
+			} );
+		} else if( w.attachEvent ){
+			w.attachEvent( "onload", function(){
+				rp.poly();
+				w.clearInterval( run );
+			} );
+		}
+	}
+
+
+	// commonjs
+	if( typeof exports !== "undefined" ){
+		exports.loadCSS = loadCSS;
+	}
+	else {
+		w.loadCSS = loadCSS;
+	}
+}( typeof global !== "undefined" ? global : this ) );
+</script>
+
+    <link rel="icon" href="/assets/favicon.ico">
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/webfontloader@1.6.28/webfontloader.min.js" as="script">
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js" as="script">
+    <link rel="preload" href="/scripts/main.js" as="script">
+    <link rel="preload" as="font" href="/font/Oswald-Regular.ttf" crossorigin>
+    <link rel="preload" as="font" href="https://at.alicdn.com/t/font_327081_1dta1rlogw17zaor.woff" crossorigin>
+    
+    <!-- fancybox -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.js" defer></script>
+    <!-- 百度统计  -->
+    
+    <!-- 谷歌统计  -->
+    
+</head>
+
+    
+        <body class="post-body">
+    
+    
+<header class="header">
+
+    <div class="read-progress"></div>
+    <div class="header-sidebar-menu">&#xe775;</div>
+    <!-- post页的toggle banner  -->
+    
+    <div class="banner">
+            <div class="blog-title">
+                <a href="/">Beansjian&#39;s Develop Blog</a>
+            </div>
+            <div class="post-title">
+                <a href="#" class="post-name">C/C++ 反汇编与逆向分析</a>
+            </div>
+    </div>
+    
+    <a class="home-link" href="/">Beansjian's Develop Blog</a>
+</header>
+    <div class="wrapper">
+        <div class="site-intro" style="
+
+
+
+
+
+
+
+height:50vh;
+">
+    
+    <!-- 主页  -->
+    
+    
+    <!-- 404页  -->
+            
+    <div class="site-intro-placeholder"></div>
+    <div class="site-intro-img" style="background-image: url(/intro/post-bg.jpg)"></div>
+    <div class="site-intro-meta">
+        <!-- 标题  -->
+        <h1 class="intro-title">
+            <!-- 主页  -->
+            
+            C/C++ 反汇编与逆向分析
+            <!-- 404 -->
+            
+        </h1>
+        <!-- 副标题 -->
+        <p class="intro-subtitle">
+            <!-- 主页副标题  -->
+            
+            
+            <!-- 404 -->
+            
+        </p>
+        <!-- 文章页meta -->
+        
+            <div class="post-intros">
+                <!-- 文章页标签  -->
+                
+                
+                    <div class="post-intro-read">
+                        <span>字数统计: <span class="post-count word-count">3.4k</span>阅读时长: <span class="post-count reading-time">12 min</span></span>
+                    </div>
+                
+                <div class="post-intro-meta">
+                    <span class="post-intro-calander iconfont-archer">&#xe676;</span>
+                    <span class="post-intro-time">2019/04/18</span>
+                    
+                    <span id="busuanzi_container_page_pv" class="busuanzi-pv">
+                        <span class="iconfont-archer">&#xe602;</span>
+                        <span id="busuanzi_value_page_pv"></span>
+                    </span>
+                    
+                    <span class="shareWrapper">
+                        <span class="iconfont-archer shareIcon">&#xe71d;</span>
+                        <span class="shareText">Share</span>
+                        <ul class="shareList">
+                            <li class="iconfont-archer share-qr" data-type="qr">&#xe75b;
+                                <div class="share-qrcode"></div>
+                            </li>
+                            <li class="iconfont-archer" data-type="weibo">&#xe619;</li>
+                            <li class="iconfont-archer" data-type="qzone">&#xe62e;</li>
+                            <li class="iconfont-archer" data-type="twitter">&#xe634;</li>
+                            <li class="iconfont-archer" data-type="facebook">&#xe67a;</li>
+                        </ul>
+                    </span>
+                </div>
+            </div>
+        
+    </div>
+</div>
+        <script>
+ 
+  // get user agent
+  var browser = {
+    versions: function () {
+      var u = window.navigator.userAgent;
+      return {
+        userAgent: u,
+        trident: u.indexOf('Trident') > -1, //IE内核
+        presto: u.indexOf('Presto') > -1, //opera内核
+        webKit: u.indexOf('AppleWebKit') > -1, //苹果、谷歌内核
+        gecko: u.indexOf('Gecko') > -1 && u.indexOf('KHTML') == -1, //火狐内核
+        mobile: !!u.match(/AppleWebKit.*Mobile.*/), //是否为移动终端
+        ios: !!u.match(/\(i[^;]+;( U;)? CPU.+Mac OS X/), //ios终端
+        android: u.indexOf('Android') > -1 || u.indexOf('Linux') > -1, //android终端或者uc浏览器
+        iPhone: u.indexOf('iPhone') > -1 || u.indexOf('Mac') > -1, //是否为iPhone或者安卓QQ浏览器
+        iPad: u.indexOf('iPad') > -1, //是否为iPad
+        webApp: u.indexOf('Safari') == -1, //是否为web应用程序，没有头部与底部
+        weixin: u.indexOf('MicroMessenger') == -1, //是否为微信浏览器
+        uc: u.indexOf('UCBrowser') > -1 //是否为android下的UC浏览器
+      };
+    }()
+  }
+  console.log("userAgent:" + browser.versions.userAgent);
+
+  // callback
+  function fontLoaded() {
+    console.log('font loaded');
+    if (document.getElementsByClassName('site-intro-meta')) {
+      document.getElementsByClassName('intro-title')[0].classList.add('intro-fade-in');
+      document.getElementsByClassName('intro-subtitle')[0].classList.add('intro-fade-in');
+      var postIntros = document.getElementsByClassName('post-intros')[0]
+      if (postIntros) {
+        postIntros.classList.add('post-fade-in');
+      }
+    }
+  }
+
+  // UC不支持跨域，所以直接显示
+  function asyncCb(){
+    if (browser.versions.uc) {
+      console.log("UCBrowser");
+      fontLoaded();
+    } else {
+      WebFont.load({
+        custom: {
+          families: ['Oswald-Regular']
+        },
+        loading: function () {  //所有字体开始加载
+          // console.log('loading');
+        },
+        active: function () {  //所有字体已渲染
+          fontLoaded();
+        },
+        inactive: function () { //字体预加载失败，无效字体或浏览器不支持加载
+          console.log('inactive: timeout');
+          fontLoaded();
+        },
+        timeout: 5000 // Set the timeout to two seconds
+      });
+    }
+  }
+
+  function asyncErr(){
+    console.warn('script load from CDN failed, will load local script')
+  }
+
+  // load webfont-loader async, and add callback function
+  function async(u, cb, err) {
+    var d = document, t = 'script',
+      o = d.createElement(t),
+      s = d.getElementsByTagName(t)[0];
+    o.src = u;
+    if (cb) { o.addEventListener('load', function (e) { cb(null, e); }, false); }
+    if (err) { o.addEventListener('error', function (e) { err(null, e); }, false); }
+    s.parentNode.insertBefore(o, s);
+  }
+
+  var asyncLoadWithFallBack = function(arr, success, reject) {
+      var currReject = function(){
+        reject()
+        arr.shift()
+        if(arr.length)
+          async(arr[0], success, currReject)
+        }
+
+      async(arr[0], success, currReject)
+  }
+
+  asyncLoadWithFallBack([
+    "https://cdn.jsdelivr.net/npm/webfontloader@1.6.28/webfontloader.min.js", 
+    "https://cdn.bootcss.com/webfont/1.6.28/webfontloader.js",
+    "/lib/webfontloader.min.js"
+  ], asyncCb, asyncErr)
+</script>        
+        <img class="loading" src="/assets/loading.svg" style="display: block; margin: 6rem auto 0 auto; width: 6rem; height: 6rem;" />
+        <div class="container container-unloaded">
+            <main class="main post-page">
+    <article class="article-entry">
+        <p>这篇文章是我学习《C++反汇编与逆向技术》这本书第二章内容的自我总结。</p>
+<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><h3 id="什么是逆向工程"><a href="#什么是逆向工程" class="headerlink" title="什么是逆向工程"></a>什么是逆向工程</h3><p>先阐述一下什么是逆向工程吧！想必很多同学甚至学信息技术的大学生对此也不太了解。  </p>
+<p>逆向工程，其实就是看成品，反推出制作过程的过程，并让其变成自己的技术。比如最近闹得火的芯片。如果你拿到一个集成的芯片，那么这个芯片就是一个黑箱。你输入，他有输出。但他黑箱内部具体是什么，你很难知道。这就需要逆向工程的帮助来还原芯片内部结构。  </p>
+<p>那么在计算机软件领域，逆向工程就是将程序反编译成源代码。比如，大家都用过C/C++，都知道在程序编译完成后会生成exe文件。将这个exe文件反编译回C语言的代码就是逆向工程。</p>
+<h3 id="新的旅程"><a href="#新的旅程" class="headerlink" title="新的旅程"></a>新的旅程</h3><p>那么，我是怎么接触到这个东西的呢？在初中的时候，我记得有一款游戏叫Kingdom Rush，他里面的英雄需要付费解锁。当时我用的是破解的iphone4，我就自己摸索着找到了一个hero所在的参数地点。将False 改成Ture后，我就可以免费用英雄了！这第一次激起了我对逆向的兴趣，虽然当时我还不知道什么是逆向。  </p>
+<p>大学里，当我看到有一篇文章叫<a href="https://juejin.im/entry/58bacfec1b69e6006b1a9c65" target="_blank" rel="noopener">一个非酋的逆向旅程</a>（对！就是这个垃圾游戏！！）再次激起了我对这个领域的兴趣，我开始自学逆向工程。在此过程中，我找到了一个叫CTF（capture the flag）的比赛。其中就有逆向的题目。我很兴奋，终于找到组织了！！然而我参加了几次比赛都是0输出，0贡献（尴尬。。。）。所以我想静下心来，潜心修炼。</p>
+<h3 id="自我感想"><a href="#自我感想" class="headerlink" title="自我感想"></a>自我感想</h3><p>不像ACM，入门的门槛较低（我认为的，大佬们嘴下留情啊。。），CTF比赛中的逆向,你没学到一定境界，就是0输出。这个领域，需要的知识杂而广，深且难。但我还是想在这个领域走下去，因为逆向给我带来的快乐是无与伦比的。  </p>
+<p>在此，既然学习了，我就想在博客里做一个记录。虽然远不及那些大佬写的文章，但我希望我的博客会对读者有帮助，也希望我的这个博客可以记录我20岁开始还没掉头发的青春。</p>
+<h2 id="整数类型的表现形式"><a href="#整数类型的表现形式" class="headerlink" title="整数类型的表现形式"></a>整数类型的表现形式</h2><p>在C中，整形的数据类型有三种：int，long，short。int，long占用4个字节（32 bits），short占用两个<br>由于二进制不方便阅读和显示，所以内存里的数据采用十六进制数显示。一个字节由两个十六进制数组成。<br>整数类型可分有符号型和无符号型。其区别在于是否有符号位。负数在内存中以补码形式存在。<br>正数区间0x00000000~0x7FFFFFFF<br>负数区间0x80000000~0xFFFFFFFF<br>以上内容大学课堂里即使你没认真上过也应该知道，所以在这里不做赘述。</p>
+<h2 id="浮点数的表现形式"><a href="#浮点数的表现形式" class="headerlink" title="浮点数的表现形式"></a>浮点数的表现形式</h2><h3 id="浮点数的编码"><a href="#浮点数的编码" class="headerlink" title="浮点数的编码"></a>浮点数的编码</h3><p>在C中，浮点数有两种数据类型：</p>
+<p>float（单精度），占4字节。二进制中，最高为为符号位，接下来8位表示指数部分，剩下23位为尾数部分</p>
+<p><img src="/dev-demo/blog/themes/archer/source/avatat/IEEE.jpg" alt="avatar"></p>
+<p>double（双精度），占8字节。最高位为符号位，指数占11位，52位为尾数位。</p>
+<p>这种编码方式叫IEEE编码。</p>
+<p>遇到四舍五入的情况时0舍1入。</p>
+<h3 id="浮点数汇编指令"><a href="#浮点数汇编指令" class="headerlink" title="浮点数汇编指令"></a>浮点数汇编指令</h3><p>浮点数的操作指令与普通数据类型不同，浮点数操作通过浮点寄存器来实现，而普通数据类型使用的是通用寄存器，它们分别使用两套不同的指令。</p>
+<p>浮点寄存器是通过栈结构来实现的，由ST(0)~ST(7)共8个栈空间组成，每个寄存器占8个字节。每次使用浮点寄存器都是率先使用ST(0)，而不能越过ST(0)直接使用ST(1)。浮点寄存器的使用就是压栈，出栈的过程。当ST(0)存在数据时，执行压栈操作后，ST(0)的数据将装入ST(1)中，若无出栈操作，将顺序地向下压栈，直到浮点寄存器占满。</p>
+<p>这里要讲一下常用浮点数汇编指令，看到知道是在操作浮点数就行。</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">指令名称</th>
+<th style="text-align:left">使用格式</th>
+<th style="text-align:left">指令功能</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">FLD</td>
+<td style="text-align:left">FLD IN</td>
+<td style="text-align:left">将浮点数IN压入ST(0)中</td>
+</tr>
+<tr>
+<td style="text-align:left">FILD</td>
+<td style="text-align:left">FILD IN</td>
+<td style="text-align:left">将整数数IN压入ST(0)中</td>
+</tr>
+<tr>
+<td style="text-align:left">FLDZ</td>
+<td style="text-align:left">FLDZ</td>
+<td style="text-align:left">将0.0压入ST(0)中</td>
+</tr>
+<tr>
+<td style="text-align:left">FLD1</td>
+<td style="text-align:left">FLD1</td>
+<td style="text-align:left">将1.0压入ST(0)中</td>
+</tr>
+<tr>
+<td style="text-align:left">FST</td>
+<td style="text-align:left">FST OUT</td>
+<td style="text-align:left">ST(0)中的数据以浮点形式存入OUT地址中</td>
+</tr>
+<tr>
+<td style="text-align:left">FSTP</td>
+<td style="text-align:left">FSTP OUT</td>
+<td style="text-align:left">和FST指令一样，但会执行一次出栈操作</td>
+</tr>
+<tr>
+<td style="text-align:left">FIST</td>
+<td style="text-align:left">FIST OUT</td>
+<td style="text-align:left">ST(0)中的数据以整数形式存入OUT地址中</td>
+</tr>
+<tr>
+<td style="text-align:left">FISTP</td>
+<td style="text-align:left">FISTP OUT</td>
+<td style="text-align:left">和FIST指令一样，但会执行一次出栈操作</td>
+</tr>
+<tr>
+<td style="text-align:left">FCOM</td>
+<td style="text-align:left">FCOM IN</td>
+<td style="text-align:left">将IN地址数据与ST(0)进行实数比较，影响对应标记位</td>
+</tr>
+<tr>
+<td style="text-align:left">FIST</td>
+<td style="text-align:left">FIST</td>
+<td style="text-align:left">比较ST(0)是否为0.0，影响对应标记位</td>
+</tr>
+<tr>
+<td style="text-align:left">FADD</td>
+<td style="text-align:left">FADD IN</td>
+<td style="text-align:left">将IN地址内数据与ST(0)做加法运算，结果放入ST(0)中</td>
+</tr>
+<tr>
+<td style="text-align:left">FADDP</td>
+<td style="text-align:left">FADDP ST(N) ST</td>
+<td style="text-align:left">将ST(N)中的数据与ST(0)中的数据做加法运算，N为0~7中的任意一个，先执行一次出栈操作，然后将相加结果放入ST(0)中保存</td>
+</tr>
+</tbody>
+</table>
+<h2 id="字符和字符串的表现形式"><a href="#字符和字符串的表现形式" class="headerlink" title="字符和字符串的表现形式"></a>字符和字符串的表现形式</h2><h3 id="字符编码"><a href="#字符编码" class="headerlink" title="字符编码"></a>字符编码</h3><p>分ASCLL和Unicode。Unicode是ASCLL的升级编码格式。</p>
+<p>ASCLL占一个字节，范围是0~255。</p>
+<p>由于ASCLL表示范围过小，因此占双字节，表示范围为0~65535的Unicode编码就产生了。</p>
+<p>但不同语言解码的Unicode会有重复。比如你在txt文件里输入日文。若用日文解码字符表那么出来的就是正常的日文，但如果用中文解码字符表那么出来的就是混乱的中文。</p>
+<h3 id="字符串的存储方式"><a href="#字符串的存储方式" class="headerlink" title="字符串的存储方式"></a>字符串的存储方式</h3><p>在程序中，只要知道字符串首地址和结束地址就可以确定字符串的位置和长度大小。首地址很简单，确定尾地址有两种方式：</p>
+<p>1.在开始的时候保存总长度</p>
+<p>取得首地址前n字节就可以得到字符串长度。缺点是在通信邻域要多开销n字节空间，而且双方要事先知道通信字符串的长度。</p>
+<p>2.使用结束符</p>
+<p>ASCLL用一个字节的’\0’，Unicode用两个字节的’\0’。他们两个编码不能混用，不然就会发生解释错误。</p>
+<p>字符串的识别相对简单，在OllyDBG和IDA Pro里都会自动识别出程序的字符串，所以这里不作更多讨论。</p>
+<h2 id="布尔类型"><a href="#布尔类型" class="headerlink" title="布尔类型"></a>布尔类型</h2><p>C++中0为假，非0为真。布尔类型在内存中占一字节。基本上都是存储在al里。</p>
+<p>关于eax，al，ah寄存器的关系：</p>
+<p>|===============EAX===============|–32个0,4个字节，2个字，1个双字</p>
+<p>|======AX=======|–16个0,2个字节，1个字</p>
+<p>|==AH===|———–8个0,1个字节</p>
+<p>|===AL==|—8个0,1个字节</p>
+<h2 id="地址，指针和引用"><a href="#地址，指针和引用" class="headerlink" title="地址，指针和引用"></a>地址，指针和引用</h2><p>说到地址，这里就需要来区分一下物理地址，虚拟地址，偏移量等概念。</p>
+<ul>
+<li>物理地址：</li>
+</ul>
+<p>就是在内存中的真实存在地址</p>
+<ul>
+<li>虚拟地址：</li>
+</ul>
+<p>这就要牵扯到Windows的历史了。当时的内存比较小，很容易就内存满而不能继续操作。这时候有人就说，内存不够可以用硬盘呀！所以现在一些程序在预加载的时候是先在硬盘里加载出来的（为了减轻内存的压力）。那么这个虚拟出来的内存就是虚拟地址。在一定条件下，虚拟地址会变回物理地址。因为内存速度还是比硬盘速度快很多。</p>
+<p>*偏移量：</p>
+<p>就是距离首地址的偏移量。对于程序来说，偏移量可以直接定位程序的功能，不会因为其他原因随意变化。物理地址和虚拟地址是会随意变动的。</p>
+<p>只有变量才存在内存地址，常量没有地址。</p>
+<p>指针的定义是使用”TYPE*”，TYPE是各类的数据类型。这意味着不同种类的指针有不同用法。</p>
+<h3 id="各类指针的工作方式"><a href="#各类指针的工作方式" class="headerlink" title="各类指针的工作方式"></a>各类指针的工作方式</h3><p>可能大家在前面的学习中有些疑惑，电脑咋知道你这个是ASCLL还是int还是double呢？  </p>
+<p>数据的存储很直接暴力，之前怎么讲他就怎么存。读取这数据的时候只要用他对应的指针，那么电脑就知道你这个范围内地址存储的数据是什么类型的了。</p>
+<ul>
+<li>这里拿几个C++源码来对比</li>
+</ul>
+<h5 id="定义int初始化为0x12345678"><a href="#定义int初始化为0x12345678" class="headerlink" title="定义int初始化为0x12345678"></a>定义int初始化为0x12345678</h5><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">int nVar = 0x12345678;</span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mov dword ptr [ebp-10h],12345678h</span><br></pre></td></tr></table></figure>
+<h5 id="定义char类型指针变量，初始化为变量nVar地址"><a href="#定义char类型指针变量，初始化为变量nVar地址" class="headerlink" title="定义char类型指针变量，初始化为变量nVar地址"></a>定义char类型指针变量，初始化为变量nVar地址</h5><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">char *pcVar=(char*)&amp;nVar;</span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">lea edx,[ebp-10h]</span><br><span class="line">mov dword ptr [ebp-18h],edx</span><br></pre></td></tr></table></figure>
+<h5 id="定义short类型的指针变量，初始化为变量nVar地址"><a href="#定义short类型的指针变量，初始化为变量nVar地址" class="headerlink" title="定义short类型的指针变量，初始化为变量nVar地址"></a>定义short类型的指针变量，初始化为变量nVar地址</h5><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">short *psnVar=(short*)&amp;nVar;</span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">lea eax,[ebp-10h]</span><br><span class="line">mov dword ptr [ebp-1Ch],eax</span><br></pre></td></tr></table></figure>
+<p>等等</p>
+<p>所有指针类型只支持加法和减法。加减法用于地址偏移。但只指针的加减法不像数学中加减法那么简单。指针加一后，指针内保存的地址值不一定是加一，具体取决于指针类型。如int型，地址值会加4，因为int是32位的共4字节。所以加的类型长度，而非数字1。</p>
+<h2 id="引用"><a href="#引用" class="headerlink" title="引用"></a>引用</h2><p>引用其实就是一种传参数的类型。可以大大减少内存的占用量。C++为了简化指针操作，对指针的操作进行了封装，产生了引用类型，而实际上引用类型就是指针类型</p>
+<h2 id="常量"><a href="#常量" class="headerlink" title="常量"></a>常量</h2><p>字面意思，常量是一个恒定不变的值，他在内存中也是不可修改的。</p>
+<p>常量数据在程序运行前就已经存在，他们被编译到可执行文件中。当程序启动后，他们便会被加载进来。这些数据通常会在常量数据区中保存，该节区的属性中是没有可改写权限的，所以在对常量进行修改时，程序就会报错。试图修改他们的数据都将引发异常，导致程序崩溃。</p>
+<h3 id="常量的定义与define和const的区别"><a href="#常量的定义与define和const的区别" class="headerlink" title="常量的定义与define和const的区别"></a>常量的定义与define和const的区别</h3><p>#define是一个真常量，而const却是由编译器判断实现的常量，是一个假的常量。在实际中，使用const定义的变量，最终还是一个变量，只是在编译器内进行了检查，发现有修改就报错。</p>
+<p>因此const所对应的地址数值是可以修改的。但const的值无法修改。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">const <span class="keyword">in</span> nConst=5;        //定义常量</span><br><span class="line">int *pConst=(int*)&amp;nConst;//将nConst指针给pConst</span><br><span class="line">*pConst=6;                //改变nConst指针所指的值</span><br><span class="line">int nVar=nConst;</span><br><span class="line"><span class="built_in">printf</span>(<span class="string">"%d %d %d"</span>,nConst,nVar,*pConst);</span><br><span class="line">``` </span><br><span class="line">这里不会报错，但结果会是 5 5 6。即nConst指针所指的指已经变成6了，但nConst还是等于5。</span><br><span class="line"></span><br><span class="line">为什么呢？我们来看汇编代码</span><br><span class="line"></span><br><span class="line">``` bash</span><br><span class="line">mov dword ptr [ebp-4],5;   给常量赋值5</span><br><span class="line">lea eax,[ebp-4];           把地址给pConst</span><br><span class="line">mov dword ptr [ebp-8],eax</span><br><span class="line">mov dword ptr [ecx],6;     变6</span><br><span class="line">mov dword ptr [ebp-0Ch],5; 给nVar赋值</span><br></pre></td></tr></table></figure>
+<p>可以看出来，nConst的5不仅存在在其地址上，更是作为一个常数。因为给nVar赋值的时候不是把指针里的值给他，而是直接给常量。</p>
+<p>因此，#define和const还是很有区别的。</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">#define</th>
+<th style="text-align:left">const</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">编译期间查找替换</td>
+<td style="text-align:left">编译期间检测其修饰变量是否被修改</td>
+</tr>
+<tr>
+<td style="text-align:left">由系统判断是否被修改</td>
+<td style="text-align:left">由编译器限制修改</td>
+</tr>
+<tr>
+<td style="text-align:left">字符串定义在只读区，常量变成二进制代码的一部分</td>
+<td style="text-align:left">根据作用域决定所在内存位置和属性</td>
+</tr>
+</tbody>
+</table>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><p>计算机的工作流程，归根到底是 输入，处理，输出的过程。数据是处理的对象。对数据的考察有两点</p>
+<h3 id="数据在何处？"><a href="#数据在何处？" class="headerlink" title="数据在何处？"></a>数据在何处？</h3><p>数据是代码加工处理的对象，而代码本身也是以二进制存放的，对于处理器而言，代码的本质也是数据。在分析时，我们会看到不同指令对数据的处理，这时首先要确定数据的存储位置，对于内存中的数据，这时候要查看地址。有内存地址才能得到内存属性。</p>
+<h3 id="数据如何解释？"><a href="#数据如何解释？" class="headerlink" title="数据如何解释？"></a>数据如何解释？</h3><p>得到内存地址，还是无法得到数据的正确内容，因为缺少解释方式。因此，这第二章中对各类数据的解释方式和特点很重要，是后面内容的基础。</p>
+<h2 id="后记"><a href="#后记" class="headerlink" title="后记"></a>后记</h2><p>写这篇博客花了我一周的时间学习，也逼我完全搞懂了第二章中的每一个知识点，挺好的。就是中间运动会期间吃坏了肚子，现在在床上一边码博客一边休息，很难受。。。<br>其实我做这个博客也只因为周围同学都做了博客所以我也就尝试了一下，感觉超级不错。以后我会不定期的更新我的博客的。总觉得学了些东西不总结不分享将来就忘记了。以此来谨记我这青春岁月吧！</p>
+
+    </article>
+    <!-- license  -->
+    
+        <div class="license-wrapper">
+            <p>原文作者：<a href="http://Beansjian.github.io">Beansjian</a>
+            </p><p>原文链接：<a href="http://Beansjian.github.io/2019/04/18/C reverse engineering_2/">http://Beansjian.github.io/2019/04/18/C reverse engineering_2/</a>
+            </p><p>发表日期：<a href="http://Beansjian.github.io/2019/04/18/C reverse engineering_2/">April 18th 2019, 11:53:45 am</a>
+            </p><p>更新日期：<a href="http://Beansjian.github.io/2019/04/18/C reverse engineering_2/">April 18th 2019, 11:53:45 am</a>
+            </p><p>版权声明：本文采用<a rel="license" href="http://creativecommons.org/licenses/by-nc/4.0/">知识共享署名-非商业性使用 4.0 国际许可协议</a>进行许可</p>
+        </div>
+    
+    <!-- paginator  -->
+    <ul class="post-paginator">
+        <li class="next">
+            
+        </li>
+        <li class="previous">
+            
+        </li>
+    </ul>
+    <!-- 评论插件 -->
+    <!-- 来必力City版安装代码 -->
+
+<!-- City版安装代码已完成 -->
+    
+    
+    <!-- partial('_partial/comment/changyan') -->
+    <!--PC版-->
+
+
+    
+    
+
+    <!-- 评论 -->
+</main>
+            <!-- profile -->
+            
+        </div>
+        <footer class="footer footer-unloaded">
+    <!-- social  -->
+    
+    <div class="social">
+        
+    
+        
+            
+                <a href="mailto:125743674@qq.com" class="iconfont-archer email" title="email"></a>
+            
+        
+    
+        
+            
+                <a href="//github.com/Beansjian" class="iconfont-archer github" target="_blank" title="github"></a>
+            
+        
+    
+        
+            
+                <span class="iconfont-archer wechat" title="wechat">
+                  
+                  <img class="profile-qr" src="/assets/QR Code.png">
+                </span>
+            
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+
+    </div>
+    
+    <!-- powered by Hexo  -->
+    <div class="copyright">
+        <span id="hexo-power">Powered by <a href="https://hexo.io/" target="_blank">Hexo</a></span><span class="iconfont-archer power">&#xe635;</span><span id="theme-info">theme <a href="https://github.com/fi3ework/hexo-theme-archer" target="_blank">Archer</a></span>
+    </div>
+    <!-- 不蒜子  -->
+    
+    <div class="busuanzi-container">
+    
+     
+    <span id="busuanzi_container_site_pv">PV: <span id="busuanzi_value_site_pv"></span> :)</span>
+    
+    </div>
+    
+</footer>
+    </div>
+    <!-- toc -->
+    
+    <div class="toc-wrapper" style=
+    
+
+
+
+
+
+
+
+top:50vh;
+
+    >
+        <div class="toc-catalog">
+            <span class="iconfont-archer catalog-icon">&#xe613;</span><span>CATALOG</span>
+        </div>
+        <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#前言"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#什么是逆向工程"><span class="toc-number">1.1.</span> <span class="toc-text">什么是逆向工程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#新的旅程"><span class="toc-number">1.2.</span> <span class="toc-text">新的旅程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#自我感想"><span class="toc-number">1.3.</span> <span class="toc-text">自我感想</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#整数类型的表现形式"><span class="toc-number">2.</span> <span class="toc-text">整数类型的表现形式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#浮点数的表现形式"><span class="toc-number">3.</span> <span class="toc-text">浮点数的表现形式</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#浮点数的编码"><span class="toc-number">3.1.</span> <span class="toc-text">浮点数的编码</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#浮点数汇编指令"><span class="toc-number">3.2.</span> <span class="toc-text">浮点数汇编指令</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#字符和字符串的表现形式"><span class="toc-number">4.</span> <span class="toc-text">字符和字符串的表现形式</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#字符编码"><span class="toc-number">4.1.</span> <span class="toc-text">字符编码</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#字符串的存储方式"><span class="toc-number">4.2.</span> <span class="toc-text">字符串的存储方式</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#布尔类型"><span class="toc-number">5.</span> <span class="toc-text">布尔类型</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#地址，指针和引用"><span class="toc-number">6.</span> <span class="toc-text">地址，指针和引用</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#各类指针的工作方式"><span class="toc-number">6.1.</span> <span class="toc-text">各类指针的工作方式</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#定义int初始化为0x12345678"><span class="toc-number">6.1.0.1.</span> <span class="toc-text">定义int初始化为0x12345678</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#定义char类型指针变量，初始化为变量nVar地址"><span class="toc-number">6.1.0.2.</span> <span class="toc-text">定义char类型指针变量，初始化为变量nVar地址</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#定义short类型的指针变量，初始化为变量nVar地址"><span class="toc-number">6.1.0.3.</span> <span class="toc-text">定义short类型的指针变量，初始化为变量nVar地址</span></a></li></ol></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#引用"><span class="toc-number">7.</span> <span class="toc-text">引用</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#常量"><span class="toc-number">8.</span> <span class="toc-text">常量</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#常量的定义与define和const的区别"><span class="toc-number">8.1.</span> <span class="toc-text">常量的定义与define和const的区别</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#小结"><span class="toc-number">9.</span> <span class="toc-text">小结</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#数据在何处？"><span class="toc-number">9.1.</span> <span class="toc-text">数据在何处？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#数据如何解释？"><span class="toc-number">9.2.</span> <span class="toc-text">数据如何解释？</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#后记"><span class="toc-number">10.</span> <span class="toc-text">后记</span></a></li></ol>
+    </div>
+    
+    <div class="back-top iconfont-archer">&#xe639;</div>
+    <div class="sidebar sidebar-hide">
+    <ul class="sidebar-tabs sidebar-tabs-active-0">
+        <li class="sidebar-tab-archives"><span class="iconfont-archer">&#xe67d;</span><span class="tab-name">Archive</span></li>
+        <li class="sidebar-tab-tags"><span class="iconfont-archer">&#xe61b;</span><span class="tab-name">Tag</span></li>
+        <li class="sidebar-tab-categories"><span class="iconfont-archer">&#xe666;</span><span class="tab-name">Cate</span></li>
+    </ul>
+    <div class="sidebar-content sidebar-content-show-archive">
+          <div class="sidebar-panel-archives">
+    <!-- 在ejs中将archive按照时间排序 -->
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <div class="total-and-search">
+        <div class="total-archive">
+        Total : 1
+        </div>
+        <!-- search  -->
+        
+    </div>
+    
+    <div class="post-archive">
+    
+    
+    
+    
+    <div class="archive-year"> 2019 </div>
+    <ul class="year-list">
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">04/18</span><a class="archive-post-title" href="/2019/04/18/C reverse engineering_2/">C/C++ 反汇编与逆向分析</a>
+        </li>
+    
+    </ul></div>
+  </div>
+        <div class="sidebar-panel-tags">
+    <div class="sidebar-tags-name">
+    
+    </div>
+    <div class="iconfont-archer sidebar-tags-empty">&#xe678;</div>
+    <div class="tag-load-fail" style="display: none; color: #ccc; font-size: 0.6rem;">
+    缺失模块。<br>
+    1、请确保node版本大于6.2<br>
+    2、在博客根目录（注意不是archer根目录）执行以下命令：<br>
+    <span style="color: #f75357; font-size: 1rem; line-height: 2rem;">npm i hexo-generator-json-content --save</span><br>
+    3、在根目录_config.yml里添加配置：
+    <pre style="color: #787878; font-size: 0.6rem;">
+jsonContent:
+  meta: false
+  pages: false
+  posts:
+    title: true
+    date: true
+    path: true
+    text: false
+    raw: false
+    content: false
+    slug: false
+    updated: false
+    comments: false
+    link: false
+    permalink: false
+    excerpt: false
+    categories: true
+    tags: true</pre>
+    </div> 
+    <div class="sidebar-tags-list"></div>
+</div>
+        <div class="sidebar-panel-categories">
+    <div class="sidebar-categories-name">
+    
+    </div>
+    <div class="iconfont-archer sidebar-categories-empty">&#xe678;</div>
+    <div class="sidebar-categories-list"></div>
+</div>
+    </div>
+</div> 
+    <script>
+    var siteMeta = {
+        root: "/",
+        author: "Beansjian"
+    }
+</script>
+    <!-- CDN failover -->
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+    <script type="text/javascript">
+        if (typeof window.$ === 'undefined')
+        {
+            console.warn('jquery load from jsdelivr failed, will load local script')
+            document.write('<script src="/lib/jquery.min.js">\x3C/script>')
+        }
+    </script>
+    <script src="/scripts/main.js"></script>
+    <!-- algolia -->
+    
+    <!-- busuanzi  -->
+    
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    
+    <!-- CNZZ  -->
+    
+    </div>
+    <!-- async load share.js -->
+    
+        <script src="/scripts/share.js" async></script>    
+     
+    </body>
+</html>
+
+
